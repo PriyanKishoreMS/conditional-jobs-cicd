@@ -49,7 +49,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          cd ${{ matrix.service }}-services
+          cd ${{ matrix.service }}
           npm install
 
       # - name: Run tests
@@ -72,7 +72,7 @@ jobs:
 
       - name: Deploy to Serverless
         run: |
-          cd ${{ matrix.service }}-services
+          cd ${{ matrix.service }}
           # Your deployment command for the specific service
           serverless deploy
         env:
