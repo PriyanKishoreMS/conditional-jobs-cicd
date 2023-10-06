@@ -19,11 +19,11 @@ jobs:
 
       - name: Determine changes
         id: step1
-        run: echo "SERVICE1_CHANGED=$(if git diff --name-only ${{ github.sha }}..origin/main | grep '^serverless-start/'; then echo true; else echo false; fi)" >> $GITHUB_ENV
+        run: echo "SERVICE1_CHANGED=$(if git diff --name-only ${{ github.sha }}..origin/main | grep '^serverless-start/'; then echo true; else echo false; fi)" >> $GITHUB_STATE
 
       - name: Determine changes
         id: step2
-        run: echo "SERVICE2_CHANGED=$(if git diff --name-only ${{ github.sha }}..origin/main | grep '^serverless-extra/'; then echo true; else echo false; fi)" >> $GITHUB_ENV
+        run: echo "SERVICE2_CHANGED=$(if git diff --name-only ${{ github.sha }}..origin/main | grep '^serverless-extra/'; then echo true; else echo false; fi)" >> $GITHUB_STATE
 
       # - name: Determine changes
       #   id: step3
@@ -52,7 +52,7 @@ jobs:
           npm install
 
       - name: Check for changes
-        run: echo "CHANGED=${{ env.SERVICE1_CHANGED }}" >> $GITHUB_ENV
+        run: echo "CHANGED=$(cat $GITHUB_STATE | grep '^SERVICE1_CHANGED=' | cut -d'=' -f2)" >> $GITHUB_ENV
       # - name: Run tests
       #   run: |
       #    if [ "${{ env.CHANGED }}" != "true" ]; then
@@ -76,7 +76,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Check for changes
-        run: echo "CHANGED=${{ env.SERVICE1_CHANGED }}" >> $GITHUB_ENV
+        run: echo "CHANGED=$(cat $GITHUB_STATE | grep '^SERVICE1_CHANGED=' | cut -d'=' -f2)" >> $GITHUB_ENV
 
       - name: Deploy to Serverless
         run: |
