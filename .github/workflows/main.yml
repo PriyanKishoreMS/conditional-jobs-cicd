@@ -19,11 +19,15 @@ jobs:
 
       - name: Determine changes
         id: step1
-        run: echo "SERVICE1_CHANGED=$(if git diff --name-only ${{ github.sha }}..origin/main | grep '^serverless-start/'; then echo true; else echo false; fi)" >> $GITHUB_STATE
+        run: |
+          env SERVICE1_CHANGED=$(if git diff --name-only ${{ github.sha }}..origin/main | grep '^serverless-start/'; then echo true; else echo false; fi) \
+          echo "SERVICE1_CHANGED=$SERVICE1_CHANGED" >> $GITHUB_STATE
 
       - name: Determine changes
         id: step2
-        run: echo "SERVICE2_CHANGED=$(if git diff --name-only ${{ github.sha }}..origin/main | grep '^serverless-extra/'; then echo true; else echo false; fi)" >> $GITHUB_STATE
+        run: |
+          env SERVICE2_CHANGED=$(if git diff --name-only ${{ github.sha }}..origin/main | grep '^serverless-extra/'; then echo true; else echo false; fi) \
+          echo "SERVICE2_CHANGED=$SERVICE2_CHANGED" >> $GITHUB_STATE
 
       # - name: Determine changes
       #   id: step3
