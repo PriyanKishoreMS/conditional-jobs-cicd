@@ -19,11 +19,11 @@ jobs:
 
       - name: Determine changes
         id: step1
-        run: echo "::set-output name=changed::$(if git diff --name-only ${{ github.sha }}..origin/main | grep '^serverless-start/'; then echo true; else echo false; fi)"
+        run: echo "SERVICE1_CHANGED=$(if git diff --name-only ${{ github.sha }}..origin/main | grep '^serverless-start/'; then echo true; else echo false; fi)" >> $GITHUB_ENV
 
       - name: Determine changes
         id: step2
-        run: echo "::set-output name=changed::$(if git diff --name-only ${{ github.sha }}..origin/main | grep '^serverless-extra/'; then echo true; else echo false; fi)"
+        run: echo "SERVICE2_CHANGED=$(if git diff --name-only ${{ github.sha }}..origin/main | grep '^serverless-extra/'; then echo true; else echo false; fi)" >> $GITHUB_ENV
 
       # - name: Determine changes
       #   id: step3
@@ -52,16 +52,15 @@ jobs:
           npm install
 
       - name: Check for changes
-        run: echo "::set-output name=changed::$(if git diff --name-only ${{ github.sha }}..origin/main | grep '^serverless-start/'; then echo true; else echo false; fi)"
-
+        run: echo "CHANGED=${{ env.SERVICE1_CHANGED }}" >> $GITHUB_ENV
       # - name: Run tests
       #   run: |
-      #     if [ "${{ needs.build.outputs.changed }}" != "true" ]; then
-      #       echo "No changes detected. Skipping build."
-      #     else
-      #       echo "Changes detected. Running build."
-      #       # Your build steps here
-      #     fi
+      #    if [ "${{ env.CHANGED }}" != "true" ]; then
+      # echo "No changes detected. Skipping build."
+      # else
+      # echo "Changes detected. Running build."
+      # Your build steps here
+      # fi
 
   deploy:
     needs: build
@@ -77,15 +76,15 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Check for changes
-        run: echo "::set-output name=changed::$(if git diff --name-only ${{ github.sha }}..origin/main | grep '^serverless-start/'; then echo true; else echo false; fi)"
+        run: echo "CHANGED=${{ env.SERVICE1_CHANGED }}" >> $GITHUB_ENV
 
       - name: Deploy to Serverless
         run: |
-          if [ "${{ needs.deploy.outputs.changed }}" != "true" ]; then
-             echo "No changes detected. Skipping deploy."
-           else
-             echo "Changes detected. Running deploy."
-             cd ${{ matrix.service }}
+           if [ "${{ env.CHANGED }}" != "true" ]; then
+            echo "No changes detected. Skipping deploy."
+          else
+            echo "Changes detected. Running deploy."
+            cd ${{ matrix.service }}
            npx serverless deploy
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
