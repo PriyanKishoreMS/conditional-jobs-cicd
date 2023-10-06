@@ -36,7 +36,6 @@ jobs:
       matrix:
         # service: [firestore, get-firestore, ml-endpoint-middleware]
         service: [serverless-start, serverless-extra]
-      fail-fast: ${{ needs.determine_changes.outputs.step1_changed != 'true' && needs.determine_changes.outputs.step2_changed != 'true' }}
 
     steps:
       - name: Checkout code
@@ -52,10 +51,17 @@ jobs:
           cd ${{ matrix.service }}
           npm install
 
+      - name: Check for changes
+        run: echo "::set-output name=changed::$(if git diff --name-only ${{ github.sha }}..origin/main | grep '^serverless-start/'; then echo true; else echo false; fi)"
+
       # - name: Run tests
       #   run: |
-      #     cd ${{ matrix.service }}-services
-      #     npm test
+      #     if [ "${{ needs.build.outputs.changed }}" != "true" ]; then
+      #       echo "No changes detected. Skipping build."
+      #     else
+      #       echo "Changes detected. Running build."
+      #       # Your build steps here
+      #     fi
 
   deploy:
     needs: build
@@ -70,10 +76,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: Check for changes
+        run: echo "::set-output name=changed::$(if git diff --name-only ${{ github.sha }}..origin/main | grep '^serverless-start/'; then echo true; else echo false; fi)"
+
       - name: Deploy to Serverless
         run: |
-          cd ${{ matrix.service }}
-          npx serverless deploy
+          if [ "${{ needs.deploy.outputs.changed }}" != "true" ]; then
+             echo "No changes detected. Skipping deploy."
+           else
+             echo "Changes detected. Running deploy."
+             cd ${{ matrix.service }}
+           npx serverless deploy
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
