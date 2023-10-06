@@ -80,14 +80,14 @@ jobs:
 
       - name: Deploy to Serverless
         run: |
-           if [ "${{ env.CHANGED }}" != "true" ]; then
+          if [ "${{ env.CHANGED }}" != "true" ]; then
             echo "No changes detected. Skipping deploy."
           else
             echo "Changes detected. Running deploy."
             cd ${{ matrix.service }}
            npx serverless deploy
            fi
-           
+
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
