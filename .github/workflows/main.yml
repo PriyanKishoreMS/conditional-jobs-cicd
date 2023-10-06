@@ -36,8 +36,8 @@ jobs:
           else
             echo true
           fi)
-          echo "SERVICE1_CHANGED=${SERVICE2_CHANGED}"
-          echo "SERVICE1_CHANGED=${SERVICE2_CHANGED}" >> $GITHUB_STATE
+          echo "SERVICE2_CHANGED=${SERVICE2_CHANGED}"
+          echo "SERVICE2_CHANGED=${SERVICE2_CHANGED}" >> $GITHUB_STATE
 
       # - name: Determine changes
       #   id: step3

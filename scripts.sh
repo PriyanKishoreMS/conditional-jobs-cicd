@@ -21,12 +21,14 @@
 #   echo "Changes detected"
 # fi
 
-SERVICE1_CHANGED=$(if git diff --quiet --exit-code  86db23eed81b53dde2f66abc1a9bc3408f80fc6a^1 86db23eed81b53dde2f66abc1a9bc3408f80fc6a -- 'serverless-start/'; then
+SERVICE1_CHANGED=$(if git diff --quiet --exit-code  236e7813fc1084c1fc4cb206cc4221d4be40baf1^1 236e7813fc1084c1fc4cb206cc4221d4be40baf1 -- 'serverless-start/'; then
   echo false
 else
   echo true
 fi)
 echo "SERVICE1_CHANGED=${SERVICE1_CHANGED}"
+
+# git diff 236e7813fc1084c1fc4cb206cc4221d4be40baf1^1 236e7813fc1084c1fc4cb206cc4221d4be40baf1 -- 'serverless-extra/'
 
 # 86db23eed81b53dde2f66abc1a9bc3408f80fc6a
 # dcb9ee1d81e4cc670a33026931945c20feefeca4
