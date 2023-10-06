@@ -1,0 +1,80 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  determine_changes:
+    runs-on: ubuntu-latest
+    outputs:
+      step1_changed: ${{ steps.step1.outputs.changed }}
+      step2_changed: ${{ steps.step2.outputs.changed }}
+      # step3_changed: ${{ steps.step3.outputs.changed }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Determine changes
+        id: step1
+        run: echo "::set-output name=changed::$(if git diff --name-only ${{ github.sha }}..origin/main | grep '^serverless-start/'; then echo true; else echo false; fi)"
+
+      - name: Determine changes
+        id: step2
+        run: echo "::set-output name=changed::$(if git diff --name-only ${{ github.sha }}..origin/main | grep '^serverless-extra/'; then echo true; else echo false; fi)"
+
+      # - name: Determine changes
+      #   id: step3
+      #   run: echo "::set-output name=changed::$(if git diff --name-only ${{ github.sha }}..origin/main | grep '^ml-endpoint-middleware-services/'; then echo true; else echo false; fi)"
+
+  build:
+    needs: determine_changes
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # service: [firestore, get-firestore, ml-endpoint-middleware]
+        service: [serverless-start, serverless-extra]
+      fail-fast: false
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+
+      - name: Install dependencies
+        run: |
+          cd ${{ matrix.service }}-services
+          npm install
+
+      # - name: Run tests
+      #   run: |
+      #     cd ${{ matrix.service }}-services
+      #     npm test
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # service: [firestore, get-firestore, ml-endpoint-middleware]
+        service: [serverless-start, serverless-extra]
+      fail-fast: false
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Deploy to Serverless
+        run: |
+          cd ${{ matrix.service }}-services
+          # Your deployment command for the specific service
+          serverless deploy
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

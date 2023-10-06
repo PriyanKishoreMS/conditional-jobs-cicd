@@ -1,0 +1,15 @@
+# org: priyankishore
+app: serverless-start
+service: serverless-start
+frameworkVersion: "3"
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: ap-south-1
+
+functions:
+  api:
+    handler: index.handler
+    events:
+      - httpApi: "*"
