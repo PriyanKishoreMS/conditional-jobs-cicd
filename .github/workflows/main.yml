@@ -36,7 +36,7 @@ jobs:
       matrix:
         # service: [firestore, get-firestore, ml-endpoint-middleware]
         service: [serverless-start, serverless-extra]
-      fail-fast: false
+      fail-fast: ${{ needs.determine_changes.outputs.step1_changed != 'true' && needs.determine_changes.outputs.step2_changed != 'true' }}
 
     steps:
       - name: Checkout code
@@ -64,7 +64,7 @@ jobs:
       matrix:
         # service: [firestore, get-firestore, ml-endpoint-middleware]
         service: [serverless-start, serverless-extra]
-      fail-fast: false
+      fail-fast: ${{ needs.build.outputs.step1_changed != 'true' && needs.build.outputs.step2_changed != 'true' }}
 
     steps:
       - name: Checkout code
