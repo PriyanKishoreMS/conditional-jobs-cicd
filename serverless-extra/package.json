@@ -1,5 +1,8 @@
 {
     "name": "serverless-start",
     "version": "1.0.0",
-    "description": ""
+    "description": "",
+    "dependencies": {
+        "serverless": "^3.35.2"
+    }
 }

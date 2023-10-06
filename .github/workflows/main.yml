@@ -73,8 +73,7 @@ jobs:
       - name: Deploy to Serverless
         run: |
           cd ${{ matrix.service }}
-          # Your deployment command for the specific service
-          serverless deploy
+          npx serverless deploy
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
