@@ -15,20 +15,18 @@
 
 # git diff a2e18ba596c6f61dff420b53c613df98a562976a dcb9ee1d81e4cc670a33026931945c20feefeca4 -- 'serverless-start/' 
 
-# if git diff --quiet --exit-code a2e18ba596c6f61dff420b53c613df98a562976a dcb9ee1d81e4cc670a33026931945c20feefeca4 -- 'serverless-start/'; then
+# if git diff --quiet --exit-code 86db23eed81b53dde2f66abc1a9bc3408f80fc6a^1 86db23eed81b53dde2f66abc1a9bc3408f80fc6a -- 'serverless-start/'; then
 #   echo "No changes"
 # else
 #   echo "Changes detected"
 # fi
 
-# SERVICE1_CHANGED=$(if git diff --quiet --exit-code ${{ github.sha }}^1 ${{ github.sha }} -- 'serverless-start/'; then
-#   echo false
-# else
-#   echo true
-# fi)
-# echo "SERVICE1_CHANGED=${SERVICE1_CHANGED}"
-
-SERVICE1_CHANGED=$(if git diff --quiet --exit-code dcb9ee1d81e4cc670a33026931945c20feefeca4 86db23eed81b53dde2f66abc1a9bc3408f80fc6a -- 'serverless-start/'; then echo false else echo true fi);echo "SERVICE1_CHANGED=${SERVICE1_CHANGED}"
+SERVICE1_CHANGED=$(if git diff --quiet --exit-code  86db23eed81b53dde2f66abc1a9bc3408f80fc6a^1 86db23eed81b53dde2f66abc1a9bc3408f80fc6a -- 'serverless-start/'; then
+  echo false
+else
+  echo true
+fi)
+echo "SERVICE1_CHANGED=${SERVICE1_CHANGED}"
 
 # 86db23eed81b53dde2f66abc1a9bc3408f80fc6a
 # dcb9ee1d81e4cc670a33026931945c20feefeca4

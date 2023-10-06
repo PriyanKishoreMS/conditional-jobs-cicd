@@ -20,7 +20,7 @@ jobs:
       - name: Determine changes
         id: step1
         run: |
-          env SERVICE1_CHANGED=$(if git diff --quiet --exit-code ${{ github.sha }}^1 ${{ github.sha }} -- 'serverless-start/'; then
+          SERVICE1_CHANGED=$(if git diff --quiet --exit-code ${{ github.sha }}^1 ${{ github.sha }} -- 'serverless-start/'; then
             echo false
           else
             echo true
@@ -31,7 +31,7 @@ jobs:
       - name: Determine changes
         id: step2
         run: |
-          env SERVICE2_CHANGED=$(if git diff --quiet --exit-code ${{ github.sha }}^1 ${{ github.sha }} -- 'serverless-extra/'; then
+          SERVICE2_CHANGED=$(if git diff --quiet --exit-code ${{ github.sha }}^1 ${{ github.sha }} -- 'serverless-extra/'; then
             echo false
           else
             echo true
