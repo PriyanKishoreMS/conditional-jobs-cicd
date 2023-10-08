@@ -20,13 +20,29 @@
 # else
 #   echo "Changes detected"
 # fi
+# -------------------------------------------------------
+# SERVICE1_CHANGED=$(if git diff --quiet --exit-code  ca7f66bce1aec529c2e3410fdfb574a6720953fc^1 ca7f66bce1aec529c2e3410fdfb574a6720953fc -- 'serverless-extra/'; then
+#   echo false
+# else
+#   echo true
+# fi)
+# echo "SERVICE1_CHANGED=${SERVICE1_CHANGED}"
+# -------------------------------------------------------
+SERVICE1_CHANGED=false
 
-SERVICE1_CHANGED=$(if git diff --quiet --exit-code  236e7813fc1084c1fc4cb206cc4221d4be40baf1^1 236e7813fc1084c1fc4cb206cc4221d4be40baf1 -- 'serverless-start/'; then
-  echo false
-else
-  echo true
-fi)
+for COMMIT in $(git rev-list HEAD); do
+  if git diff --quiet --exit-code $COMMIT^1 $COMMIT -- 'serverless-start/'; then
+    echo "No changes in commit $COMMIT for 'serverless-start/'"
+  else
+    echo "Changes detected in commit $COMMIT for 'serverless-start/'"
+    SERVICE1_CHANGED=true
+    break
+  fi
+done
+
 echo "SERVICE1_CHANGED=${SERVICE1_CHANGED}"
+
+# -------------------------------------------------------
 
 # git diff 236e7813fc1084c1fc4cb206cc4221d4be40baf1^1 236e7813fc1084c1fc4cb206cc4221d4be40baf1 -- 'serverless-extra/'
 
