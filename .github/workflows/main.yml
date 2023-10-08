@@ -99,7 +99,6 @@ jobs:
     # service: [serverless-start, serverless-extra]
     #   fail-fast: ${{ needs.build.outputs.step1_changed != 'true' && needs.build.outputs.step2_changed != 'true' }}
 
-    if: ${{needs.build.outputs.step1_changed == 'true'}}
     steps:
       - name: Checkout code
         uses: actions/checkout@v2

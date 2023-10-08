@@ -49,3 +49,5 @@ echo "SERVICE1_CHANGED=${SERVICE1_CHANGED}"
 # 86db23eed81b53dde2f66abc1a9bc3408f80fc6a
 # dcb9ee1d81e4cc670a33026931945c20feefeca4
 # a2e18ba596c6f61dff420b53c613df98a562976a
+
+curl -s "https://api.github.com/repos/PriyanKishoreMS/conditional-jobs-cicd/compare/a2e18ba596c6f61dff420b53c613df98a562976a...fcf0a52414885c503e0842a02391961de6cbc376" | jq -r '.commits'
