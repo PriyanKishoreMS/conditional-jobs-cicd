@@ -6,11 +6,70 @@ on:
       - main
 
 jobs:
-  build_and_deploy:
+  determine_changes:
+    runs-on: ubuntu-latest
+    outputs:
+      step1_changed: ${{ steps.step1.outputs.SERVICE1_CHANGED }}
+      step2_changed: ${{ steps.step2.outputs.SERVICE2_CHANGED }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Determine changes - serverless-start
+        id: step1
+        run: |
+          CHANGED_COMMITS=$(curl -s "https://api.github.com/repos/${{ github.repository }}/compare/${{ github.event.before }}...${{ github.sha }}" | jq -r '.commits[].sha')
+
+          SERVICE1_CHANGED=false
+          for COMMIT in $CHANGED_COMMITS; do
+            echo "Commit $COMMIT"
+            FILES_CHANGED=$(curl -s "https://api.github.com/repos/${{ github.repository }}/commits/$COMMIT" | jq -r '.files | map(select(.filename | startswith("serverless-start/"))) | length')
+            echo "Commit $COMMIT has $FILES_CHANGED files in 'serverless-start/'"
+
+            if [ "$FILES_CHANGED" -gt 0 ]; then
+              echo "Changes detected in commit $COMMIT for 'serverless-start/'"
+              SERVICE1_CHANGED=true
+              break
+            else
+              echo "No changes in commit $COMMIT for 'serverless-start/'"
+            fi
+          done
+
+          echo "SERVICE1_CHANGED=${SERVICE1_CHANGED}"
+
+      - name: Determine changes - serverless-extra
+        id: step2
+        run: |
+          CHANGED_COMMITS=$(curl -s "https://api.github.com/repos/${{ github.repository }}/compare/${{ github.event.before }}...${{ github.sha }}" | jq -r '.commits[].sha')
+
+          SERVICE2_CHANGED=false
+          for COMMIT in $CHANGED_COMMITS; do
+            echo "Commit $COMMIT"
+            FILES_CHANGED=$(curl -s "https://api.github.com/repos/${{ github.repository }}/commits/$COMMIT" | jq -r '.files | map(select(.filename | startswith("serverless-extra/"))) | length')
+            echo "Commit $COMMIT has $FILES_CHANGED files in 'serverless-extra/'"
+
+            if [ "$FILES_CHANGED" -gt 0 ]; then
+              echo "Changes detected in commit $COMMIT for 'serverless-extra/'"
+              SERVICE2_CHANGED=true
+              break
+            else
+              echo "No changes in commit $COMMIT for 'serverless-extra/'"
+            fi
+          done
+
+          echo "SERVICE2_CHANGED=${SERVICE2_CHANGED}"
+
+      - name: Debug Output
+        run: |
+          echo "SERVICE1_CHANGED=${{ steps.step1.outputs.SERVICE1_CHANGED }}"
+          echo "SERVICE2_CHANGED=${{ steps.step2.outputs.SERVICE2_CHANGED }}"
+
+  build:
+    needs: determine_changes
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # service: [firestore, get-firestore, ml-endpoint-middleware]
         service: [serverless-start, serverless-extra]
 
     steps:
@@ -27,13 +86,37 @@ jobs:
           cd ${{ matrix.service }}
           npm install
 
-      # - name: Run tests
-      #   run: |
-      #    Your test commands here
-
-      - name: Deploy to Serverless
+      - name: Debug build outputs
         run: |
-          cd ${{ matrix.service }}
+          echo "needs.build.outputs: ${{ needs.determine_changes.outputs.step1_changed }}"
+          echo "needs.build.outputs.step2_changed: ${{ needs.determine_changes.outputs }}"
+
+      # - name: Run tests
+      #   if: steps.determine_changes.outputs.SERVICE1_CHANGED == 'true' && matrix.service == 'serverless-start'
+      #   run: |
+      #     # Your test commands here
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [serverless-start, serverless-extra]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Deploy to Serverless - serverless-start
+        if: needs.build.outputs.step1_changed == 'true' && matrix.service == 'serverless-start'
+        run: |
+          cd serverless-start
+          npx serverless deploy
+
+      - name: Deploy to Serverless - serverless-extra
+        if: needs.build.outputs.step2_changed == 'true' && matrix.service == 'serverless-extra'
+        run: |
+          cd serverless-extra
           npx serverless deploy
 
         env:
