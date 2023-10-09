@@ -83,7 +83,7 @@ jobs:
 
       - name: Debug build outputs
         run: |
-          echo "needs.build.outputs: ${{ needs.build.outputs }}"
+          echo "needs.build.outputs: ${{ needs.determine_changes }}"
           echo "needs.build.outputs.step2_changed: ${{ needs.build.outputs.step2_changed }}"
 
       # - name: Run tests
