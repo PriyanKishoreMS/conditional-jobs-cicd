@@ -6,11 +6,44 @@ on:
       - main
 
 jobs:
-  determine_changes:
+  build:
     runs-on: ubuntu-latest
-    env:
-      SERVICE1_CHANGED: false
-      SERVICE2_CHANGED: false
+    strategy:
+      matrix:
+        service: [serverless-start, serverless-extra]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+
+      - name: Install dependencies
+        run: |
+          cd ${{ matrix.service }}
+          npm install
+
+      - name: Debug build outputs
+        run: |
+          echo "needs.build.outputs: ${{ needs.build.outputs.step1_changed }}"
+          echo "needs.build.outputs.step2_changed: ${{ needs.build.outputs.step2_changed }}"
+          echo "SERVICE1_CHANGED=${{ env.SERVICE1_CHANGED }}"
+          echo "SERVICE2_CHANGED=${{ env.SERVICE2_CHANGED }}"
+
+      # - name: Run tests
+      #   if: needs.build.outputs.step1_changed == 'true' && matrix.service == 'serverless-start'
+      #   run: |
+      #     # Your test commands here
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [serverless-start, serverless-extra]
 
     steps:
       - name: Checkout code
@@ -58,63 +91,19 @@ jobs:
 
           echo "SERVICE2_CHANGED=${SERVICE2_CHANGED}"
 
-      - name: Debug Output
+      - name: Debug outputs
         run: |
           echo "SERVICE1_CHANGED=${{ env.SERVICE1_CHANGED }}"
           echo "SERVICE2_CHANGED=${{ env.SERVICE2_CHANGED }}"
-
-  build:
-    needs: determine_changes
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        service: [serverless-start, serverless-extra]
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18.x
-
-      - name: Install dependencies
-        run: |
-          cd ${{ matrix.service }}
-          npm install
-
-      - name: Debug build outputs
-        run: |
-          echo "needs.build.outputs: ${{ needs.determine_changes.outputs.step1_changed }}"
-          echo "needs.build.outputs.step2_changed: ${{ needs.determine_changes.outputs }}"
-          echo "SERVICE1_CHANGED=${{ env.SERVICE1_CHANGED }}"
-          echo "SERVICE2_CHANGED=${{ env.SERVICE2_CHANGED }}"
-
-      # - name: Run tests
-      #   if: steps.determine_changes.outputs.SERVICE1_CHANGED == 'true' && matrix.service == 'serverless-start'
-      #   run: |
-      #     # Your test commands here
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        service: [serverless-start, serverless-extra]
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
 
       - name: Deploy to Serverless - serverless-start
-        if: needs.build.outputs.step1_changed == 'true' && matrix.service == 'serverless-start'
+        if: ${{ env.SERVICE1_CHANGED == 'true' && matrix.service == 'serverless-start' }}}
         run: |
           cd serverless-start
           npx serverless deploy
 
       - name: Deploy to Serverless - serverless-extra
-        if: needs.build.outputs.step2_changed == 'true' && matrix.service == 'serverless-extra'
+        if: ${{ env.SERVICE2_CHANGED == 'true' && matrix.service == 'serverless-extra' }}}
         run: |
           cd serverless-extra
           npx serverless deploy
