@@ -62,8 +62,13 @@ jobs:
 
       - name: Debug Output
         run: |
-          echo "SERVICE1_CHANGED=${SERVICE1_CHANGED}"
-          echo "SERVICE2_CHANGED=${SERVICE2_CHANGED}"
+          echo "step1_changed=${{ steps.step1.outputs.SERVICE1_CHANGED }}" 
+          echo "step2_changed=${{ steps.step2.outputs.SERVICE2_CHANGED }}"
+
+      - name: Set environment variables
+        run: |
+          echo "step1_changed=${{ steps.step1.outputs.SERVICE1_CHANGED }}" >> $GITHUB_ENV
+          echo "step2_changed=${{ steps.step2.outputs.SERVICE2_CHANGED }}" >> $GITHUB_ENV
 
   build:
     needs: determine_changes
@@ -88,8 +93,8 @@ jobs:
 
       - name: Debug build outputs
         run: |
-          echo "needs.determine_changes.outputs.step1_changed: ${{ fromJson(needs.determine_changes.outputs.step1_changed) }}"
-          echo "needs.determine_changes.outputs.step2_changed: ${{ fromJson(needs.determine_changes.outputs) }}"
+          echo "step1_changed: ${{ env.step1_changed }}"
+          echo "step2_changed: ${{ env.step2_changed }}"
 
       # - name: Run tests
       #   if: steps.determine_changes.outputs.SERVICE1_CHANGED == 'true' && matrix.service == 'serverless-start'
@@ -108,13 +113,13 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Deploy to Serverless - serverless-start
-        if: needs.build.outputs.step1_changed == 'true' && matrix.service == 'serverless-start'
+        if: env.step1_changed == 'true' && matrix.service == 'serverless-start'
         run: |
           cd serverless-start
           npx serverless deploy
 
       - name: Deploy to Serverless - serverless-extra
-        if: needs.build.outputs.step2_changed == 'true' && matrix.service == 'serverless-extra'
+        if: env.step2_changed == 'true' && matrix.service == 'serverless-extra'
         run: |
           cd serverless-extra
           npx serverless deploy
