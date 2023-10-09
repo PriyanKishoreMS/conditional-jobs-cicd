@@ -6,44 +6,11 @@ on:
       - main
 
 jobs:
-  build:
+  determine_changes:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        service: [serverless-start, serverless-extra]
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18.x
-
-      - name: Install dependencies
-        run: |
-          cd ${{ matrix.service }}
-          npm install
-
-      - name: Debug build outputs
-        run: |
-          echo "needs.build.outputs: ${{ needs.build.outputs.step1_changed }}"
-          echo "needs.build.outputs.step2_changed: ${{ needs.build.outputs.step2_changed }}"
-          echo "SERVICE1_CHANGED=${{ env.SERVICE1_CHANGED }}"
-          echo "SERVICE2_CHANGED=${{ env.SERVICE2_CHANGED }}"
-
-      # - name: Run tests
-      #   if: needs.build.outputs.step1_changed == 'true' && matrix.service == 'serverless-start'
-      #   run: |
-      #     # Your test commands here
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        service: [serverless-start, serverless-extra]
+    outputs:
+      step1_changed: ${{ steps.step1.outputs.SERVICE1_CHANGED }}
+      step2_changed: ${{ steps.step2.outputs.SERVICE2_CHANGED }}
 
     steps:
       - name: Checkout code
@@ -54,6 +21,7 @@ jobs:
         run: |
           CHANGED_COMMITS=$(curl -s "https://api.github.com/repos/${{ github.repository }}/compare/${{ github.event.before }}...${{ github.sha }}" | jq -r '.commits[].sha')
 
+          SERVICE1_CHANGED=false
           for COMMIT in $CHANGED_COMMITS; do
             echo "Commit $COMMIT"
             FILES_CHANGED=$(curl -s "https://api.github.com/repos/${{ github.repository }}/commits/$COMMIT" | jq -r '.files | map(select(.filename | startswith("serverless-start/"))) | length')
@@ -75,6 +43,7 @@ jobs:
         run: |
           CHANGED_COMMITS=$(curl -s "https://api.github.com/repos/${{ github.repository }}/compare/${{ github.event.before }}...${{ github.sha }}" | jq -r '.commits[].sha')
 
+          SERVICE2_CHANGED=false
           for COMMIT in $CHANGED_COMMITS; do
             echo "Commit $COMMIT"
             FILES_CHANGED=$(curl -s "https://api.github.com/repos/${{ github.repository }}/commits/$COMMIT" | jq -r '.files | map(select(.filename | startswith("serverless-extra/"))) | length')
@@ -91,19 +60,61 @@ jobs:
 
           echo "SERVICE2_CHANGED=${SERVICE2_CHANGED}"
 
-      - name: Debug outputs
+      - name: Debug Output
         run: |
-          echo "SERVICE1_CHANGED=${{ env.SERVICE1_CHANGED }}"
-          echo "SERVICE2_CHANGED=${{ env.SERVICE2_CHANGED }}"
+          echo "SERVICE1_CHANGED=${SERVICE1_CHANGED}"
+          echo "SERVICE2_CHANGED=${SERVICE2_CHANGED}"
+
+  build:
+    needs: determine_changes
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [serverless-start, serverless-extra]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+
+      - name: Install dependencies
+        run: |
+          cd ${{ matrix.service }}
+          npm install
+
+      - name: Debug build outputs
+        run: |
+          echo "needs.build.outputs: ${{ needs.determine_changes.outputs.step1_changed }}"
+          echo "needs.build.outputs.step2_changed: ${{ needs.determine_changes.outputs }}"
+
+      # - name: Run tests
+      #   if: steps.determine_changes.outputs.SERVICE1_CHANGED == 'true' && matrix.service == 'serverless-start'
+      #   run: |
+      #     # Your test commands here
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [serverless-start, serverless-extra]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
 
       - name: Deploy to Serverless - serverless-start
-        if: ${{ env.SERVICE1_CHANGED == 'true' && matrix.service == 'serverless-start' }}}
+        if: needs.build.outputs.step1_changed == 'true' && matrix.service == 'serverless-start'
         run: |
           cd serverless-start
           npx serverless deploy
 
       - name: Deploy to Serverless - serverless-extra
-        if: ${{ env.SERVICE2_CHANGED == 'true' && matrix.service == 'serverless-extra' }}}
+        if: needs.build.outputs.step2_changed == 'true' && matrix.service == 'serverless-extra'
         run: |
           cd serverless-extra
           npx serverless deploy
