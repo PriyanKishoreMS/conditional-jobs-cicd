@@ -36,7 +36,7 @@ jobs:
             fi
           done
 
-          echo "SERVICE1_CHANGED=${SERVICE1_CHANGED}"
+          echo "SERVICE1_CHANGED=${SERVICE1_CHANGED}" >> $GITHUB_ENV
 
       - name: Determine changes - serverless-extra
         id: step2
@@ -58,17 +58,12 @@ jobs:
             fi
           done
 
-          echo "SERVICE2_CHANGED=${SERVICE2_CHANGED}"
+          echo "SERVICE2_CHANGED=${SERVICE2_CHANGED}" >> $GITHUB_ENV
 
       - name: Debug Output
         run: |
           echo "step1_changed=${{ steps.step1.outputs.SERVICE1_CHANGED }}" 
           echo "step2_changed=${{ steps.step2.outputs.SERVICE2_CHANGED }}"
-
-      - name: Set environment variables
-        run: |
-          echo "step1_changed=${{ steps.step1.outputs.SERVICE1_CHANGED }}" >> $GITHUB_ENV
-          echo "step2_changed=${{ steps.step2.outputs.SERVICE2_CHANGED }}" >> $GITHUB_ENV
 
   build:
     needs: determine_changes
