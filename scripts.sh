@@ -28,19 +28,19 @@
 # fi)
 # echo "SERVICE1_CHANGED=${SERVICE1_CHANGED}"
 # -------------------------------------------------------
-SERVICE1_CHANGED=false
+# SERVICE1_CHANGED=false
 
-for COMMIT in $(git rev-list HEAD); do
-  if git diff --quiet --exit-code $COMMIT^1 $COMMIT -- 'serverless-start/'; then
-    echo "No changes in commit $COMMIT for 'serverless-start/'"
-  else
-    echo "Changes detected in commit $COMMIT for 'serverless-start/'"
-    SERVICE1_CHANGED=true
-    break
-  fi
-done
+# for COMMIT in $(git rev-list HEAD); do
+#   if git diff --quiet --exit-code $COMMIT^1 $COMMIT -- 'serverless-start/'; then
+#     echo "No changes in commit $COMMIT for 'serverless-start/'"
+#   else
+#     echo "Changes detected in commit $COMMIT for 'serverless-start/'"
+#     SERVICE1_CHANGED=true
+#     break
+#   fi
+# done
 
-echo "SERVICE1_CHANGED=${SERVICE1_CHANGED}"
+# echo "SERVICE1_CHANGED=${SERVICE1_CHANGED}"
 
 # -------------------------------------------------------
 
@@ -50,4 +50,41 @@ echo "SERVICE1_CHANGED=${SERVICE1_CHANGED}"
 # dcb9ee1d81e4cc670a33026931945c20feefeca4
 # a2e18ba596c6f61dff420b53c613df98a562976a
 
-curl -s "https://api.github.com/repos/PriyanKishoreMS/conditional-jobs-cicd/compare/a2e18ba596c6f61dff420b53c613df98a562976a...fcf0a52414885c503e0842a02391961de6cbc376" | jq -r '.commits'
+# curl -s "https://api.github.com/repos/PriyanKishoreMS/conditional-jobs-cicd/compare/a2e18ba596c6f61dff420b53c613df98a562976a...fcf0a52414885c503e0842a02391961de6cbc376" | jq -r '.commits'
+
+
+# CHANGED_COMMITS=$(curl -s "https://api.github.com/repos/PriyanKishoreMS/conditional-jobs-cicd/compare/fcf0a52414885c503e0842a02391961de6cbc376...a01cc31a4bf9f8a5d02fc5ddce226ffd515ee519" | jq -r '.commits[].sha')
+  
+#    SERVICE1_CHANGED=false
+#    for COMMIT in $CHANGED_COMMITS; do
+#      if git diff --quiet --exit-code $COMMIT^1 $COMMIT -- 'serverless-start/'; then
+#        echo "No changes in commit $COMMIT for 'serverless-start/'"
+#      else
+#        echo "Changes detected in commit $COMMIT for 'serverless-start/'"
+#        SERVICE1_CHANGED=true
+#        break
+#      fi
+#    done
+  
+#    echo "SERVICE1_CHANGED=${SERVICE1_CHANGED}"
+
+CHANGED_COMMITS=$(curl -s "https://api.github.com/repos/PriyanKishoreMS/conditional-jobs-cicd/compare/86db23eed81b53dde2f66abc1a9bc3408f80fc6a...a01cc31a4bf9f8a5d02fc5ddce226ffd515ee519" | jq -r '.commits[].sha')
+
+echo "CHANGED_COMMITS=${CHANGED_COMMITS}"
+
+SERVICE1_CHANGED=false
+for COMMIT in $CHANGED_COMMITS; do
+  echo "Commit $COMMIT"
+  FILES_CHANGED=$(curl -s "https://api.github.com/repos/PriyanKishoreMS/conditional-jobs-cicd/commits/$COMMIT" | jq -r '.files | map(select(.filename | startswith("serverless-start/"))) | length')
+  echo "Commit $COMMIT has $FILES_CHANGED files in 'serverless-start/'"
+  
+  if [ "$FILES_CHANGED" -gt 0 ]; then
+    echo "Changes detected in commit $COMMIT for 'serverless-start/'"
+    SERVICE1_CHANGED=true
+    break
+  else
+    echo "No changes in commit $COMMIT for 'serverless-start/'"
+  fi
+done
+
+echo "SERVICE1_CHANGED=${SERVICE1_CHANGED}"

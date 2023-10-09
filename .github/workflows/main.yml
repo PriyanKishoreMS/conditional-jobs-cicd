@@ -9,60 +9,62 @@ jobs:
   determine_changes:
     runs-on: ubuntu-latest
     outputs:
-      step1_changed: ${{ steps.step1.outputs.changed }}
-      step2_changed: ${{ steps.step2.outputs.changed }}
-      # step3_changed: ${{ steps.step3.outputs.changed }}
+      step1_changed: ${{ steps.step1.outputs.SERVICE1_CHANGED }}
+      step2_changed: ${{ steps.step2.outputs.SERVICE2_CHANGED }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Determine changes
+      - name: Determine changes - serverless-start
         id: step1
         run: |
           CHANGED_COMMITS=$(curl -s "https://api.github.com/repos/${{ github.repository }}/compare/${{ github.event.before }}...${{ github.sha }}" | jq -r '.commits[].sha')
 
-           SERVICE1_CHANGED=false
-           for COMMIT in $CHANGED_COMMITS; do
-             if git diff --quiet --exit-code $COMMIT^1 $COMMIT -- 'serverless-start/'; then
-               echo "No changes in commit $COMMIT for 'serverless-start/'"
-             else
-               echo "Changes detected in commit $COMMIT for 'serverless-start/'"
-               SERVICE1_CHANGED=true
-               break
-             fi
-           done
+          SERVICE1_CHANGED=false
+          for COMMIT in $CHANGED_COMMITS; do
+            echo "Commit $COMMIT"
+            FILES_CHANGED=$(curl -s "https://api.github.com/repos/${{ github.repository }}/commits/$COMMIT" | jq -r '.files | map(select(.filename | startswith("serverless-start/"))) | length')
+            echo "Commit $COMMIT has $FILES_CHANGED files in 'serverless-start/'"
 
-           echo "SERVICE1_CHANGED=${SERVICE1_CHANGED}"
+            if [ "$FILES_CHANGED" -gt 0 ]; then
+              echo "Changes detected in commit $COMMIT for 'serverless-start/'"
+              SERVICE1_CHANGED=true
+              break
+            else
+              echo "No changes in commit $COMMIT for 'serverless-start/'"
+            fi
+          done
 
-      - name: Determine changes
+          echo "SERVICE1_CHANGED=${SERVICE1_CHANGED}"
+
+      - name: Determine changes - serverless-extra
         id: step2
         run: |
           CHANGED_COMMITS=$(curl -s "https://api.github.com/repos/${{ github.repository }}/compare/${{ github.event.before }}...${{ github.sha }}" | jq -r '.commits[].sha')
 
-            SERVICE2_CHANGED=false
-            for COMMIT in $CHANGED_COMMITS; do
-              if git diff --quiet --exit-code $COMMIT^1 $COMMIT -- 'serverless-extra/'; then
-                echo "No changes in commit $COMMIT for 'serverless-extra/'"
-              else
-                echo "Changes detected in commit $COMMIT for 'serverless-extra/'"
-                SERVICE2_CHANGED=true
-                break
-              fi
-            done
+          SERVICE2_CHANGED=false
+          for COMMIT in $CHANGED_COMMITS; do
+            echo "Commit $COMMIT"
+            FILES_CHANGED=$(curl -s "https://api.github.com/repos/${{ github.repository }}/commits/$COMMIT" | jq -r '.files | map(select(.filename | startswith("serverless-extra/"))) | length')
+            echo "Commit $COMMIT has $FILES_CHANGED files in 'serverless-extra/'"
 
-            echo "SERVICE2_CHANGED=${SERVICE2_CHANGED}"
+            if [ "$FILES_CHANGED" -gt 0 ]; then
+              echo "Changes detected in commit $COMMIT for 'serverless-extra/'"
+              SERVICE2_CHANGED=true
+              break
+            else
+              echo "No changes in commit $COMMIT for 'serverless-extra/'"
+            fi
+          done
 
-      # - name: Determine changes
-      #   id: step3
-      #   run: echo "::set-output name=changed::$(if git diff --name-only ${{ github.sha }}..origin/main | grep '^ml-endpoint-middleware-services/'; then echo true; else echo false; fi)"
+          echo "SERVICE2_CHANGED=${SERVICE2_CHANGED}"
 
   build:
     needs: determine_changes
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # service: [firestore, get-firestore, ml-endpoint-middleware]
         service: [serverless-start, serverless-extra]
 
     steps:
@@ -79,49 +81,33 @@ jobs:
           cd ${{ matrix.service }}
           npm install
 
-      # - name: Check for changes
-      #   run: echo "CHANGED=$(cat $GITHUB_STATE | grep '^SERVICE1_CHANGED=' | cut -d'=' -f2)" >> $GITHUB_ENV
       # - name: Run tests
+      #   if: steps.determine_changes.outputs.SERVICE1_CHANGED == 'true' && matrix.service == 'serverless-start'
       #   run: |
-      #    if [ "${{ env.CHANGED }}" != "true" ]; then
-      # echo "No changes detected. Skipping build."
-      # else
-      # echo "Changes detected. Running build."
-      # Your build steps here
-      # fi
+      #     # Your test commands here
 
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    # strategy:
-    # matrix:
-    #     # service: [firestore, get-firestore, ml-endpoint-middleware]
-    # service: [serverless-start, serverless-extra]
-    #   fail-fast: ${{ needs.build.outputs.step1_changed != 'true' && needs.build.outputs.step2_changed != 'true' }}
+    strategy:
+      matrix:
+        service: [serverless-start, serverless-extra]
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
       - name: Deploy to Serverless - serverless-start
+        if: needs.build.outputs.step1_changed == 'true' && matrix.service == 'serverless-start'
         run: |
-          if [ "${{ needs.build.outputs.step1_changed }}" != "true" ]; then
-            echo "No changes detected in serverless-start. Skipping deploy."
-          else
-            echo "Changes detected in serverless-start. Running deploy."
-            cd serverless-start
-            npx serverless deploy
-          fi
+          cd serverless-start
+          npx serverless deploy
 
       - name: Deploy to Serverless - serverless-extra
+        if: needs.build.outputs.step2_changed == 'true' && matrix.service == 'serverless-extra'
         run: |
-          if [ "${{ needs.build.outputs.step2_changed }}" != "true" ]; then
-            echo "No changes detected in serverless-extra. Skipping deploy."
-          else
-            echo "Changes detected in serverless-extra. Running deploy."
-            cd serverless-extra
-            npx serverless deploy
-          fi
+          cd serverless-extra
+          npx serverless deploy
 
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
