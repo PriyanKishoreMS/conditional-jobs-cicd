@@ -83,8 +83,8 @@ jobs:
 
       - name: Debug build outputs
         run: |
-          echo "needs.build.outputs: ${{ needs.determine_changes }}"
-          echo "needs.build.outputs.step2_changed: ${{ needs.build.outputs.step2_changed }}"
+          echo "needs.build.outputs: ${{ needs.determine_changes.outputs.step1_changed }}"
+          echo "needs.build.outputs.step2_changed: ${{ needs.determine_changes.outputs }}"
 
       # - name: Run tests
       #   if: steps.determine_changes.outputs.SERVICE1_CHANGED == 'true' && matrix.service == 'serverless-start'
