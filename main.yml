@@ -29,7 +29,7 @@ jobs:
       # - name: Run tests
       #   if: steps.determine_changes.outputs.SERVICE1_CHANGED == 'true' && matrix.service == 'serverless-start'
       #   run: |
-      #     # Your test commands here
+      #     # Your test commands here and run
 
   deploy:
     needs: build
