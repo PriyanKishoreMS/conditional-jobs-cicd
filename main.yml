@@ -2,6 +2,9 @@ name: CI/CD Pipeline
 
 on:
   push:
+    paths:
+      - "serverless-start/**"
+      - "serverless-extra/**"
     branches:
       - main
 
@@ -10,6 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
+        # service: [firestore, get-firestore, ml-endpoint-middleware]
         service: [serverless-start, serverless-extra]
 
     steps:
@@ -27,72 +31,24 @@ jobs:
           npm install
 
       # - name: Run tests
-      #   if: steps.determine_changes.outputs.SERVICE1_CHANGED == 'true' && matrix.service == 'serverless-start'
       #   run: |
-      #     # Your test commands here and run
+      #    Your test commands here
 
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    # strategy:
-    #   matrix:
-    #     service: [serverless-start, serverless-extra]
+    strategy:
+      matrix:
+        service: [serverless-start, serverless-extra]
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Deploy to Serverless - serverless-start
-        # if: needs.build.outputs.step1_changed == 'true' && matrix.service == 'serverless-start'
+      - name: Deploy to Serverless
         run: |
-          CHANGED_COMMITS=$(curl -s "https://api.github.com/repos/${{ github.repository }}/compare/${{ github.event.before }}...${{ github.sha }}" | jq -r '.commits[].sha')
-
-          SERVICE1_CHANGED=false
-          for COMMIT in $CHANGED_COMMITS; do
-            echo "Commit $COMMIT"
-            FILES_CHANGED=$(curl -s "https://api.github.com/repos/${{ github.repository }}/commits/$COMMIT" | jq -r '.files | map(select(.filename | startswith("serverless-start/"))) | length')
-            echo "Commit $COMMIT has $FILES_CHANGED files in 'serverless-start/'"
-
-            if [ "$FILES_CHANGED" -gt 0 ]; then
-              echo "Changes detected in commit $COMMIT for 'serverless-start/'"
-              SERVICE1_CHANGED=true
-              break
-            else
-              echo "No changes in commit $COMMIT for 'serverless-start/'"
-            fi
-          done
-
-          echo "SERVICE1_CHANGED=${SERVICE1_CHANGED}"
-          if [ "$SERVICE1_CHANGED" = true ] ; then
-            cd serverless-start
-            npx serverless deploy
-          fi
-
-      - name: Deploy to Serverless - serverless-extra
-        # if: needs.build.outputs.step2_changed == 'true' && matrix.service == 'serverless-extra'
-        run: |
-          CHANGED_COMMITS=$(curl -s "https://api.github.com/repos/${{ github.repository }}/compare/${{ github.event.before }}...${{ github.sha }}" | jq -r '.commits[].sha')
-
-           SERVICE2_CHANGED=false
-           for COMMIT in $CHANGED_COMMITS; do
-             echo "Commit $COMMIT"
-             FILES_CHANGED=$(curl -s "https://api.github.com/repos/${{ github.repository }}/commits/$COMMIT" | jq -r '.files | map(select(.filename | startswith("serverless-extra/"))) | length')
-             echo "Commit $COMMIT has $FILES_CHANGED files in 'serverless-extra/'"
-
-             if [ "$FILES_CHANGED" -gt 0 ]; then
-               echo "Changes detected in commit $COMMIT for 'serverless-extra/'"
-               SERVICE2_CHANGED=true
-               break
-             else
-               echo "No changes in commit $COMMIT for 'serverless-extra/'"
-             fi
-           done
-
-           echo "SERVICE2_CHANGED=${SERVICE2_CHANGED}"
-            if [ "$SERVICE2_CHANGED" = true ] ; then
-              cd serverless-extra
-              npx serverless deploy
-            fi
+          cd ${{ matrix.service }}
+          npx serverless deploy
 
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
