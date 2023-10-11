@@ -64,7 +64,6 @@ jobs:
           fi
 
       - name: Deploy to Serverless - serverless-extra
-        # if: needs.build.outputs.step2_changed == 'true' && matrix.service == 'serverless-extra'
         run: |
           CHANGED_COMMITS=$(curl -s "https://api.github.com/repos/${{ github.repository }}/compare/${{ github.event.before }}...${{ github.sha }}" | jq -r '.commits[].sha')
 
