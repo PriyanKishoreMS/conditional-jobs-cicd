@@ -30,7 +30,7 @@ jobs:
           cd ${{ matrix.service }}
           npm install
 
-      # - name: Run tests
+      # - name: Run tests here
       #   run: |
       #    npm run test
 
