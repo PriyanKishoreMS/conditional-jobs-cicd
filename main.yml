@@ -32,7 +32,7 @@ jobs:
 
       # - name: Run tests
       #   run: |
-      #    Your test commands here
+      #    npm run test
 
   deploy:
     needs: build
