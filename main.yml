@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # service: [firestore, get-firestore, ml-endpoint-middleware]
+        # service: [firestore, get-firestore, ml-endpoint-middlewarefdsafds]
         service: [serverless-start, serverless-extra]
 
     steps:
