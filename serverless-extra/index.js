@@ -3,7 +3,7 @@ module.exports.handler = async event => {
 		statusCode: 200,
 		body: JSON.stringify(
 			{
-				message: "This is now working 2",
+				message: "This is now working 3",
 				input: event,
 			},
 			null,
