@@ -3,14 +3,14 @@ name: CI/CD Pipeline
 on:
   push:
     branches:
-      - refactor/organise-codebase
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        service: [serverless-extra]
+        service: [serverless-start, serverless-extra]
 
     steps:
       - name: Checkout code
@@ -34,7 +34,8 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     strategy:
-      matrix: [serverless-extra]
+      matrix:
+        service: [serverless-start, serverless-extra]
 
     steps:
       - name: Checkout code
