@@ -3,7 +3,7 @@ module.exports.handler = async event => {
 		statusCode: 200,
 		body: JSON.stringify(
 			{
-				message: "This is the modular message",
+				message: "This is the matrix talking",
 				input: event,
 			},
 			null,
