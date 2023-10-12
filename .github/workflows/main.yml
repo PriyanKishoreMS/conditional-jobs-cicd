@@ -3,14 +3,14 @@ name: CI/CD Pipeline
 on:
   push:
     branches:
-      - main
+      - refactor/organise-codebase
 
 jobs:
   build:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        service: [serverless-start, serverless-extra]
+        service: [serverless-extra]
 
     steps:
       - name: Checkout code
@@ -34,8 +34,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     strategy:
-      matrix:
-        service: [serverless-start, serverless-extra]
+      matrix: [serverless-extra]
 
     steps:
       - name: Checkout code
@@ -45,7 +44,7 @@ jobs:
         run: |
           CHANGED_COMMITS=$(curl -s "https://api.github.com/repos/${{ github.repository }}/compare/${{ github.event.before }}...${{ github.sha }}" | jq -r '.commits[].sha')
 
-          SERVICE1_CHANGED=false
+          SERVICE_CHANGED=false
           for COMMIT in $CHANGED_COMMITS; do
             echo "Commit $COMMIT"
             FILES_CHANGED=$(curl -s "https://api.github.com/repos/${{ github.repository }}/commits/$COMMIT" | jq -r '.files | map(select(.filename | startswith("${{ matrix.service }}/"))) | length')
@@ -53,15 +52,15 @@ jobs:
 
             if [ "$FILES_CHANGED" -gt 0 ]; then
               echo "Changes detected in commit $COMMIT for ${{ matrix.service }}"
-              SERVICE1_CHANGED=true
+              SERVICE_CHANGED=true
               break
             else
               echo "No changes in commit $COMMIT for ${{ matrix.service }}"
             fi
           done
 
-          echo "SERVICE1_CHANGED=${SERVICE1_CHANGED}"
-          if [ "$SERVICE1_CHANGED" = true ] ; then
+          echo "SERVICE_CHANGED=${SERVICE_CHANGED}"
+          if [ "$SERVICE_CHANGED" = true ] ; then
             cd ${{ matrix.service }}
             npx serverless deploy
           fi
