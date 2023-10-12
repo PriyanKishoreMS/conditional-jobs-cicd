@@ -5,45 +5,6 @@ on:
     branches:
       - main
 
-.job-template: &deploy
-  runs-on: ubuntu-latest
-
-  steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-
-    - name: Determine changes
-      run: |
-        CHANGED_COMMITS=$(curl -s "https://api.github.com/repos/${{ github.repository }}/compare/${{ github.event.before }}...${{ github.sha }}" | jq -r '.commits[].sha')
-
-        SERVICE_CHANGED=false
-        for COMMIT in $CHANGED_COMMITS; do
-          echo "Commit $COMMIT"
-          FILES_CHANGED=$(curl -s "https://api.github.com/repos/${{ github.repository }}/commits/$COMMIT" | jq -r '.files | map(select(.filename | startswith($service))) | length')
-          echo "Commit $COMMIT has $FILES_CHANGED files in '$service'"
-
-          if [ "$FILES_CHANGED" -gt 0 ]; then
-            echo "Changes detected in commit $COMMIT for '$service'"
-            SERVICE_CHANGED=true
-            break
-          else
-            echo "No changes in commit $COMMIT for '$service'"
-          fi
-        done
-
-        echo "SERVICE_CHANGED=${SERVICE_CHANGED}"
-
-    - name: Deploy to Serverless
-      run: |
-        if [ "$SERVICE_CHANGED" = true ]; then
-          cd $service
-          npx serverless deploy
-        fi
-
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -52,6 +13,9 @@ jobs:
         service: [serverless-start, serverless-extra]
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
@@ -62,18 +26,46 @@ jobs:
           cd ${{ matrix.service }}
           npm install
 
+      # - name: Run tests
+      #   run: |
+      #    npm run test
+
   deploy:
     needs: build
-    # strategy:
-    #   matrix:
-    #     service: [serverless-start, serverless-extra]
-    jobs:
-      - name: Deploy to Serverless - serverless-start
-        <<: *deploy
-        with:
-          service: serverless-start
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [serverless-start, serverless-extra]
 
-      - name: Deploy to Serverless - serverless-extra
-        <<: *deploy
-        with:
-          service: serverless-extra
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Deploy to Serverless - serverless-start
+        run: |
+          CHANGED_COMMITS=$(curl -s "https://api.github.com/repos/${{ github.repository }}/compare/${{ github.event.before }}...${{ github.sha }}" | jq -r '.commits[].sha')
+
+          SERVICE1_CHANGED=false
+          for COMMIT in $CHANGED_COMMITS; do
+            echo "Commit $COMMIT"
+            FILES_CHANGED=$(curl -s "https://api.github.com/repos/${{ github.repository }}/commits/$COMMIT" | jq -r '.files | map(select(.filename | startswith(${{ matrix.service }}))) | length')
+            echo "Commit $COMMIT has $FILES_CHANGED files in ${{ matrix.service }}"
+
+            if [ "$FILES_CHANGED" -gt 0 ]; then
+              echo "Changes detected in commit $COMMIT for ${{ matrix.service }}"
+              SERVICE1_CHANGED=true
+              break
+            else
+              echo "No changes in commit $COMMIT for ${{ matrix.service }}"
+            fi
+          done
+
+          echo "SERVICE1_CHANGED=${SERVICE1_CHANGED}"
+          if [ "$SERVICE1_CHANGED" = true ] ; then
+            cd ${{ matrix.service }}
+            npx serverless deploy
+          fi
+
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
