@@ -43,12 +43,12 @@ jobs:
 
       - name: Deploy to Serverless
         run: |
-          CHANGED_COMMITS=$(curl -s "https://api.github.com/repos/${{ github.repository }}/compare/${{ github.event.before }}...${{ github.sha }}" | jq -r '.commits[].sha')
+          CHANGED_COMMITS=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/repos/${{ github.repository }}/compare/${{ github.event.before }}...${{ github.sha }}" | jq -r '.commits[].sha')
 
           SERVICE_CHANGED=false
           for COMMIT in $CHANGED_COMMITS; do
             echo "Commit $COMMIT"
-            FILES_CHANGED=$(curl -s "https://api.github.com/repos/${{ github.repository }}/commits/$COMMIT" | jq -r '.files | map(select(.filename | startswith("${{ matrix.service }}/"))) | length')
+            FILES_CHANGED=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/repos/${{ github.repository }}/commits/$COMMIT" | jq -r '.files | map(select(.filename | startswith("${{ matrix.service }}/"))) | length')
             echo "Commit $COMMIT has $FILES_CHANGED files in ${{ matrix.service }}"
 
             if [ "$FILES_CHANGED" -gt 0 ]; then
